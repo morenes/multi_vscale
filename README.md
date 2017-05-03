@@ -1,3 +1,6 @@
+# vscale is currently deprecated and has not tracked changes to the RISC-V spec
+
+
 <img src="http://albert-magyar.github.io/vscale/vscale.svg">
 
 # vscale
