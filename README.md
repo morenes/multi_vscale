@@ -1,4 +1,6 @@
-# vscale is currently deprecated and has not tracked changes to the RISC-V spec
+# vScale is currently deprecated.
+
+The implementation has not tracked changes to the RISC-V spec.
 
 
 <img src="http://albert-magyar.github.io/vscale/vscale.svg">
