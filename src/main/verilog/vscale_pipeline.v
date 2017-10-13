@@ -6,6 +6,7 @@
 
 module vscale_pipeline(
                        input                        clk,
+                       input [`CORE_IDX_WIDTH-1:0]  core_id,
                        input                        reset,
                        input                        imem_wait,
                        output [`XPR_LEN-1:0]        imem_addr,
@@ -136,6 +137,7 @@ module vscale_pipeline(
    wire [`XPR_LEN-1:0]                          handler_PC;
    wire                                         eret;
    wire [`XPR_LEN-1:0]                          epc;
+   reg                                          halted;
 
    vscale_ctrl ctrl(
                     .clk(clk),
@@ -180,7 +182,8 @@ module vscale_pipeline(
                     .csr_imm_sel(csr_imm_sel),
                     .illegal_csr_access(illegal_csr_access),
                     .prv(prv),
-                    .eret(eret)
+                    .eret(eret),
+                    .halted(halted)
                     );
 
 
@@ -197,13 +200,23 @@ module vscale_pipeline(
 
    assign imem_addr = PC_PIF;
 
+   //Init the PC to an appropriate value for each core, so we
+   //can get them to execute different instructions.
    always @(posedge clk) begin
       if (reset) begin
-         PC_IF <= `XPR_LEN'h200;
+        case (core_id)
+          2'b00 : PC_IF <= 4;
+          2'b01 : PC_IF <= 24;
+          2'b10 : PC_IF <= 44;
+          2'b11 : PC_IF <= 64;
+          default : PC_IF <= 0;
+        endcase // case (core_id)
       end else if (~stall_IF) begin
          PC_IF <= PC_PIF;
       end
    end
+
+   assign halted = !imem_wait && (imem_rdata == `RV32_HALT);
 
    always @(posedge clk) begin
       if (reset) begin
@@ -211,13 +224,19 @@ module vscale_pipeline(
          inst_DX <= `RV_NOP;
       end else if (~stall_DX) begin
          if (kill_IF) begin
+            PC_DX <= 32'd120; //so pipeline bubbles don't interfere with assertions.
             inst_DX <= `RV_NOP;
          end else begin
-            PC_DX <= PC_IF;
-            inst_DX <= imem_rdata;
+            if(halted) begin
+                PC_DX <= 32'd120; //so pipeline bubbles don't interfere with assertions.
+                inst_DX <= `RV_NOP;
+            end else begin
+                PC_DX <= PC_IF;
+                inst_DX <= imem_rdata;
+            end
          end
       end
-   end // always @ (posedge hclk)
+   end // always @ (posedge clk)
 
    assign rs1_addr = inst_DX[19:15];
    assign rs2_addr = inst_DX[24:20];
@@ -285,11 +304,11 @@ module vscale_pipeline(
    assign dmem_addr = alu_out;
 
    always @(posedge clk) begin
-      if (reset) begin
+      if (reset | (stall_DX & ~stall_WB)) begin
 `ifndef SYNTHESIS
-         PC_WB <= $random;
-         store_data_WB <= $random;
-         alu_out_WB <= $random;
+         PC_WB <= `XPR_LEN'b0;
+         store_data_WB <= `XPR_LEN'b0;
+         alu_out_WB <= `XPR_LEN'b0;
 `endif
       end else if (~stall_WB) begin
          PC_WB <= PC_DX;

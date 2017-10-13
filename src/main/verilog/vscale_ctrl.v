@@ -47,7 +47,8 @@ module vscale_ctrl(
                    output wire                        kill_WB,
                    output wire                        exception_WB,
                    output wire [`ECODE_WIDTH-1:0]     exception_code_WB,
-                   output wire                        retire_WB
+                   output wire                        retire_WB,
+                   input                              halted
                    );
 
    // IF stage ctrl pipeline registers
@@ -147,8 +148,14 @@ module vscale_ctrl(
    end
 
    assign kill_DX = stall_DX || ex_DX || ex_WB;
+   //Add a dmem_en + mem_instr here and we should be good...
+   //No one's going to pay attention to its signals anyway unless the ready is
+   //high, thanks to the arbiter...
+   //It's gotta be dmem_en_unkilled cause dmem_en has a combo loop with
+   //stall_DX.
    assign stall_DX = stall_WB || load_use || raw_on_busy_md
-                     || (fence_i && store_in_WB) || (uses_md && !md_req_ready);
+                     || (fence_i && store_in_WB) || (uses_md_unkilled && !md_req_ready)
+                     || (dmem_en_unkilled && dmem_wait);
    assign new_ex_DX = ebreak || ecall || illegal_instruction || illegal_csr_access;
    assign ex_DX = had_ex_DX || ((new_ex_DX) && !stall_DX); // TODO: add causes
    assign killed_DX = prev_killed_DX || kill_DX;
@@ -181,6 +188,7 @@ module vscale_ctrl(
     */
 
    assign dmem_size = {1'b0,funct3[1:0]};
+
    assign dmem_type = funct3;
 
    always @(*) begin
@@ -396,7 +404,7 @@ module vscale_ctrl(
    always @(*) begin
       if (exception) begin
          PC_src_sel = `PC_HANDLER;
-      end else if (replay_IF || (stall_IF && !imem_wait)) begin
+      end else if (replay_IF || (stall_IF && !imem_wait) || halted) begin
          PC_src_sel = `PC_REPLAY;
       end else if (eret) begin
          PC_src_sel = `PC_EPC;
@@ -414,7 +422,7 @@ module vscale_ctrl(
    // WB stage ctrl
 
    always @(posedge clk) begin
-      if (reset) begin
+      if (reset | (stall_DX & ~stall_WB)) begin
          prev_killed_WB <= 0;
          had_ex_WB <= 0;
          wr_reg_unkilled_WB <= 0;
@@ -435,7 +443,15 @@ module vscale_ctrl(
    end
 
    assign kill_WB = stall_WB || ex_WB;
-   assign stall_WB = (dmem_wait && dmem_en_WB) || (uses_md_WB && !md_resp_valid);
+   //Load-store arch, so the two cases for stall_WB ought to be mutually
+   //exclusive. One is if the multiplier is in use, and the other is if
+   //a memory op is in writeback and dmem_wait is true.
+   //I enforce a total order on DX stages through the modification to
+   //stall_DX, so writeback will always be fine because the memory is
+   //pipelined and thus the response/store clocking in will be unaffected by
+   //the request in the next cycle. Thus we can drop the condition that checks
+   //if the memory op is in writeback, and I have done so.
+   assign stall_WB = (uses_md_WB && !md_resp_valid);
    assign dmem_access_exception = dmem_badmem_e && !stall_WB;
    assign ex_WB = had_ex_WB || dmem_access_exception;
    assign killed_WB = prev_killed_WB || kill_WB;

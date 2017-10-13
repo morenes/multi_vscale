@@ -1,9 +1,11 @@
 `include "vscale_hasti_constants.vh"
 `include "vscale_ctrl_constants.vh"
 `include "vscale_csr_addr_map.vh"
+`include "vscale_multicore_constants.vh"
 
 module vscale_core(
                    input                           clk,
+                   input [`CORE_IDX_WIDTH-1:0]     core_id,
                    output [`HASTI_ADDR_WIDTH-1:0]  imem_haddr,
                    output                          imem_hwrite,
                    output [`HASTI_SIZE_WIDTH-1:0]  imem_hsize,
@@ -110,6 +112,7 @@ module vscale_core(
 
    vscale_pipeline pipeline(
                             .clk(clk),
+                            .core_id(core_id),
                             .reset(htif_reset),
                             .imem_wait(imem_wait),
                             .imem_addr(imem_addr),

@@ -96,3 +96,6 @@
 `define RV32_FUNCT3_DIVU   3'd5
 `define RV32_FUNCT3_REM    3'd6
 `define RV32_FUNCT3_REMU   3'd7
+
+//Halt instr
+`define RV32_HALT     32'hfeedfeed

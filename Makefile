@@ -37,7 +37,6 @@ VCS_OPTS = -PP -notice -line +lint=all,noVCDE,noUI +v2k -timescale=1ns/10ps -qui
 	+define+DEBUG -debug_pp \
 	+incdir+$(V_SRC_DIR) -Mdirectory=$(SIM_DIR)/csrc \
 	+vc+list -CC "-I$(VCS_HOME)/include" \
-	-CC "-std=c++11" \
 
 MAX_CYCLES = 1000000
 
