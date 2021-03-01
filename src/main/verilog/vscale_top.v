@@ -2,7 +2,7 @@
 `include "vscale_csr_addr_map.vh"
 `include "vscale_hasti_constants.vh"
 
-module vscale_sim_top(
+module vscale_top(
                       input                        clk,
                       input                        reset,
                       input                        htif_pcr_req_valid,
@@ -18,17 +18,17 @@ module vscale_sim_top(
 
    wire                                            resetn;
 
-   wire [`HASTI_ADDR_WIDTH-1:0]                    imem_haddr [0:`NUM_CORES-1];
-   wire                                            imem_hwrite [0:`NUM_CORES-1];
-   wire [`HASTI_SIZE_WIDTH-1:0]                    imem_hsize [0:`NUM_CORES-1];
-   wire [`HASTI_BURST_WIDTH-1:0]                   imem_hburst [0:`NUM_CORES-1];
-   wire                                            imem_hmastlock [0:`NUM_CORES-1];
-   wire [`HASTI_PROT_WIDTH-1:0]                    imem_hprot [0:`NUM_CORES-1];
-   wire [`HASTI_TRANS_WIDTH-1:0]                   imem_htrans [0:`NUM_CORES-1];
-   wire [`HASTI_BUS_WIDTH-1:0]                     imem_hwdata [0:`NUM_CORES-1];
-   wire [`HASTI_BUS_WIDTH-1:0]                     imem_hrdata [0:`NUM_CORES-1];
-   wire                                            imem_hready [0:`NUM_CORES-1];
-   wire [`HASTI_RESP_WIDTH-1:0]                    imem_hresp [0:`NUM_CORES-1];
+   wire [0:`NUM_CORES-1][`HASTI_ADDR_WIDTH-1:0]    imem_haddr ;
+   wire [0:`NUM_CORES-1]                           imem_hwrite;
+   wire [0:`NUM_CORES-1][`HASTI_SIZE_WIDTH-1:0]    imem_hsize ;
+   wire [0:`NUM_CORES-1][`HASTI_BURST_WIDTH-1:0]   imem_hburst;
+   wire [0:`NUM_CORES-1]                           imem_hmastlock;
+   wire [0:`NUM_CORES-1][`HASTI_PROT_WIDTH-1:0]    imem_hprot ;
+   wire [0:`NUM_CORES-1][`HASTI_TRANS_WIDTH-1:0]   imem_htrans;
+   wire [0:`NUM_CORES-1][`HASTI_BUS_WIDTH-1:0]     imem_hwdata;
+   wire [0:`NUM_CORES-1][`HASTI_BUS_WIDTH-1:0]     imem_hrdata;
+   wire [0:`NUM_CORES-1]                           imem_hready;
+   wire [0:`NUM_CORES-1][`HASTI_RESP_WIDTH-1:0]    imem_hresp ;
 
    //Signals between cores and arbiter
    wire [`HASTI_ADDR_WIDTH-1:0]                    dmem_haddr [0:`NUM_CORES-1];

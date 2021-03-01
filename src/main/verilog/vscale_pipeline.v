@@ -3,32 +3,47 @@
 `include "rv32_opcodes.vh"
 `include "vscale_csr_addr_map.vh"
 `include "vscale_md_constants.vh"
+`include "vscale_hasti_constants.vh"
 
 module vscale_pipeline(
-                       input                        clk,
-                       input [`CORE_IDX_WIDTH-1:0]  core_id,
-                       input                        reset,
-                       input                        imem_wait,
-                       output [`XPR_LEN-1:0]        imem_addr,
-                       input [`XPR_LEN-1:0]         imem_rdata,
-                       input                        imem_badmem_e,
-                       input                        dmem_wait,
-                       output                       dmem_en,
-                       output                       dmem_wen,
-                       output [`MEM_TYPE_WIDTH-1:0] dmem_size,
-                       output [`XPR_LEN-1:0]        dmem_addr,
-                       output [`XPR_LEN-1:0]        dmem_wdata_delayed,
-                       input [`XPR_LEN-1:0]         dmem_rdata,
-                       input                        dmem_badmem_e,
-                       input                        htif_reset,
-                       input                        htif_pcr_req_valid,
-                       output                       htif_pcr_req_ready,
-                       input                        htif_pcr_req_rw,
-                       input [`CSR_ADDR_WIDTH-1:0]  htif_pcr_req_addr,
-                       input [`HTIF_PCR_WIDTH-1:0]  htif_pcr_req_data,
-                       output                       htif_pcr_resp_valid,
-                       input                        htif_pcr_resp_ready,
-                       output [`HTIF_PCR_WIDTH-1:0] htif_pcr_resp_data
+   //vscale_pipeline.PC_WB = 32'd0 && !vscale_pipeline.stall_WB
+   /*AUTOSVA
+   mcm: st -IN> ld
+   st_val = vscale_pipeline.ctrl.store_in_WB
+   [`XPR_LEN-1:0] st_transid = vscale_pipeline.alu_out_WB
+   [`XPR_LEN-1:0] st_data = dmem_wdata_delayed
+
+   ld_val = vscale_pipeline.ctrl.load_in_WB
+   [`XPR_LEN-1:0] ld_transid = vscale_pipeline.alu_out_WB
+   [`XPR_LEN-1:0] ld_data = vscale_pipeline.load_data_WB
+   */
+   // Store X, Store Y, and check that they go in order (MP)
+   // 
+
+   input                        clk,
+   input [`CORE_IDX_WIDTH-1:0]  core_id,
+   input                        reset,
+   input                        imem_wait,
+   output [`XPR_LEN-1:0]        imem_addr,
+   input [`XPR_LEN-1:0]         imem_rdata,
+   input                        imem_badmem_e,
+   input                        dmem_wait,
+   output                       dmem_en,
+   output                       dmem_wen,
+   output [`MEM_TYPE_WIDTH-1:0] dmem_size,
+   output [`XPR_LEN-1:0]        dmem_addr,
+   output [`XPR_LEN-1:0]        dmem_wdata_delayed,
+   input [`XPR_LEN-1:0]         dmem_rdata,
+   input                        dmem_badmem_e,
+   input                        htif_reset,
+   input                        htif_pcr_req_valid,
+   output                       htif_pcr_req_ready,
+   input                        htif_pcr_req_rw,
+   input [`CSR_ADDR_WIDTH-1:0]  htif_pcr_req_addr,
+   input [`HTIF_PCR_WIDTH-1:0]  htif_pcr_req_data,
+   output                       htif_pcr_resp_valid,
+   input                        htif_pcr_resp_ready,
+   output [`HTIF_PCR_WIDTH-1:0] htif_pcr_resp_data
                        );
 
    function [`XPR_LEN-1:0] store_data;

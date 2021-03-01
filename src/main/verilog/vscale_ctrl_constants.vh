@@ -1,3 +1,5 @@
+`include "vscale_multicore_constants.vh"
+
 `define SRC_A_SEL_WIDTH 2
 `define SRC_A_RS1  `SRC_A_SEL_WIDTH'd0
 `define SRC_A_PC   `SRC_A_SEL_WIDTH'd1
